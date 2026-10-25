@@ -69,8 +69,7 @@ if (Test-Path "$projectDir\tunnel_url.txt") {
 
 if (-not $tunnelProc -or [string]::IsNullOrWhiteSpace($publicUrl)) {
     Write-Host "[*] Starting Cloudflare HTTPS Quick Tunnel..." -ForegroundColor Cyan
-    Remove-Item -Path "$projectDir\cf_tunnel.log" -Force -ErrorAction SilentlyContinue
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c cloudflared.exe tunnel --protocol http2 --url http://127.0.0.1:8000 2> cf_tunnel.log" -WorkingDirectory $projectDir -WindowStyle Minimized
+    Start-Process -FilePath "$projectDir\cloudflared.exe" -ArgumentList "tunnel", "--protocol", "http2", "--url", "http://127.0.0.1:8000" -RedirectStandardError "$projectDir\cf_tunnel.log" -WindowStyle Hidden
 
     for ($i = 0; $i -lt 15; $i++) {
         Start-Sleep -Milliseconds 800
