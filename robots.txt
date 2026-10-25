@@ -1,0 +1,6 @@
+# Robots.txt for Mobility Project | AI-Driven Integrated Mobility Platform
+User-agent: *
+Allow: /
+
+# Sitemap Index
+Sitemap: https://mobility-project.onrender.com/sitemap.xml

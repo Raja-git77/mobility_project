@@ -1,0 +1,54 @@
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "ai-mobility-app-9f50c",
+          "appId": "1:371534982693:android:917c2a894ad6bcc7f999cc",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ai-mobility-app-9f50c",
+          "configurations": {
+            "android": "1:371534982693:android:917c2a894ad6bcc7f999cc",
+            "ios": "1:371534982693:ios:fd7790a0ee8598eaf999cc",
+            "macos": "1:371534982693:ios:fd7790a0ee8598eaf999cc",
+            "web": "1:371534982693:web:793fd6c960205a55f999cc",
+            "windows": "1:371534982693:web:454210855bf27bb4f999cc"
+          }
+        }
+      }
+    }
+  }
+}
