@@ -96,12 +96,14 @@ try {
     python add_chrome_keyword.py | Out-Null
 } catch {}
 
-# 5. Launch Google Chrome
-Write-Host "[*] Launching Google Chrome..." -ForegroundColor Cyan
+# 5. Launch Google Chrome with Mobility Auto-Redirect Extension
+Write-Host "[*] Launching Google Chrome with Auto-Redirect Extension..." -ForegroundColor Cyan
+$extPath = "$projectDir\chrome_redirect_ext"
+$chromeArgs = "--load-extension=`"$extPath`" `"$localUrl`""
 if (Test-Path $chromePath) {
-    Start-Process -FilePath $chromePath -ArgumentList "$localUrl"
+    Start-Process -FilePath $chromePath -ArgumentList $chromeArgs
 } else {
-    Start-Process "chrome" -ArgumentList "$localUrl" -ErrorAction SilentlyContinue
+    Start-Process "chrome" -ArgumentList $chromeArgs -ErrorAction SilentlyContinue
 }
 
 Write-Host "=====================================================" -ForegroundColor Cyan

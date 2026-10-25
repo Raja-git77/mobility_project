@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Mobility App Auto-Redirect",
+  "version": "1.0.0",
+  "description": "Intercepts address bar searches for 'mobility app' and opens the local or production Mobility Platform.",
+  "permissions": [
+    "webNavigation",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.google.co.in/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.google.com/search*",
+        "*://*.google.co.in/search*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "Mobility App Redirector"
+  }
+}
