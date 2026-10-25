@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="AI-Driven Integrated Mobility Platform — Self-Drive Vehicle Rentals, On-Demand Chauffeur Drivers & Smart Route Optimization.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#10B981">
+
+  <!-- OpenGraph WhatsApp & Social Card Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mobility Platform">
+  <meta property="og:title" content="AI-Driven Integrated Mobility Platform">
+  <meta property="og:description" content="Self-Drive Vehicle Rentals, On-Demand Chauffeur Drivers & Smart Route Optimization. Book instantly with verified drivers!">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>AI-Driven Integrated Mobility Platform</title>
+
+  <!-- Leaflet Map CSS & JS for Interactive Route Planner -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      background: #0B132B;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0F172A;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Desktop Responsive Device Frame (390x844 aspect ratio) */
+    @media (min-width: 500px) {
+      .app-wrapper {
+        width: 390px;
+        height: 844px;
+        max-height: calc(100vh - 40px);
+        background: #F8FAFC;
+        border-radius: 46px;
+        border: 9px solid #334155;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(16,185,129,0.25);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+      .desktop-caption {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        position: absolute;
+        bottom: 8px;
+        font-size: 11px;
+        color: #94A3B8;
+        font-weight: 600;
+        background: rgba(255,255,255,0.06);
+        padding: 5px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .phone-island {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 22px;
+        background: #020617;
+        border-radius: 12px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 12px;
+      }
+      .camera-lens {
+        width: 8px;
+        height: 8px;
+        background: #1E293B;
+        border-radius: 50%;
+      }
+    }
+
+    /* Mobile Screens: 100% Native Full Screen */
+    @media (max-width: 499px) {
+      body { background: #F8FAFC; align-items: stretch; }
+      .app-wrapper {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .desktop-caption, .phone-island { display: none !important; }
+    }
+
+    /* Screens Container */
+    .screen {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      flex-direction: column;
+      background: #F8FAFC;
+    }
+    .screen.active { display: flex; }
+
+    /* App Bar */
+    .app-header {
+      background: #FFFFFF;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #E2E8F0;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #10B981, #059669);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(16,185,129,0.3);
+    }
+    .brand-title { font-size: 17px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px; }
+    .brand-sub { font-size: 10px; font-weight: 700; color: #10B981; }
+
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+    }
+
+    /* Hero AI Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, #0F172A, #1E293B);
+      margin: 16px;
+      padding: 18px;
+      border-radius: 20px;
+      color: white;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 25px rgba(16,185,129,0.15);
+    }
+    .ai-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(16,185,129,0.2);
+      border: 1px solid rgba(16,185,129,0.4);
+      padding: 4px 10px;
+      border-radius: 8px;
+      color: #34D399;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .hero-btn {
+      width: 100%;
+      background: #10B981;
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16,185,129,0.4);
+    }
+
+    /* Section Header */
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748B;
+      letter-spacing: 1px;
+      margin: 16px 16px 8px;
+    }
+
+    /* Service Cards */
+    .service-card {
+      background: white;
+      margin: 0 16px 12px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid #E2E8F0;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .service-card:active { transform: scale(0.98); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .card-title { font-size: 15px; font-weight: 800; color: #0F172A; }
+    .badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .badge-green { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .badge-blue { background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; }
+    .card-desc { font-size: 12px; color: #64748B; line-height: 1.4; margin-bottom: 12px; }
+    .card-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #10B981;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Route Planner Screen */
+    #map { height: 260px; width: 100%; border-radius: 16px; border: 1px solid #CBD5E1; }
+    .input-box {
+      background: white;
+      border: 1px solid #CBD5E1;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .input-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      color: #0F172A;
+      font-weight: 600;
+    }
+    .chip-container {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 0 10px;
+      scrollbar-width: none;
+    }
+    .chip {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #334155;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .chip.active { background: #10B981; color: white; border-color: #10B981; }
+
+    /* Vehicle Selection Cards */
+    .filter-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px; }
+    .filter-btn {
+      background: white;
+      border: 1px solid #E2E8F0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748B;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: #10B981; color: white; border-color: #10B981; }
+
+    .vehicle-card {
+      background: white;
+      margin: 0 16px 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1.5px solid #E2E8F0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .vehicle-card.selected {
+      border-color: #10B981;
+      background: #F0FDF4;
+      box-shadow: 0 6px 18px rgba(16,185,129,0.18);
+    }
+    .v-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .v-name { font-size: 16px; font-weight: 800; color: #0F172A; }
+    .v-fare { font-size: 17px; font-weight: 900; color: #10B981; }
+    .v-specs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+    .v-spec-chip {
+      background: #F1F5F9;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    /* Fixed Bottom Bar */
+    .bottom-bar {
+      background: white;
+      padding: 12px 16px 16px;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      bottom: 0;
+      z-index: 500;
+    }
+    .bar-total { font-size: 20px; font-weight: 900; color: #0F172A; }
+    .bar-sub { font-size: 11px; color: #64748B; font-weight: 600; }
+    .primary-btn {
+      background: #10B981;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Payment Screen */
+    .summary-card {
+      background: white;
+      margin: 16px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid #E2E8F0;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+      color: #64748B;
+    }
+    .summary-val { font-weight: 700; color: #0F172A; text-align: right; }
+    .divider { height: 1px; background: #F1F5F9; margin: 10px 0; }
+    .method-tab {
+      display: flex;
+      gap: 10px;
+      margin: 10px 16px;
+    }
+    .m-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1.5px solid #E2E8F0;
+      background: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+    .m-btn.active { border-color: #10B981; background: #ECFDF5; color: #065F46; }
+    .upi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 10px 16px;
+    }
+    .upi-box {
+      background: white;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .upi-box.active { border-color: #10B981; background: #F0FDF4; }
+    .upi-box span { font-size: 9px; font-weight: 800; display: block; margin-top: 4px; color: #334155; }
+
+    /* Success Receipt Screen */
+    .success-container {
+      padding: 30px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .check-circle {
+      width: 72px;
+      height: 72px;
+      background: #10B981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 38px;
+      box-shadow: 0 10px 25px rgba(16,185,129,0.4);
+      margin-bottom: 16px;
+      animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .wa-btn {
+      width: 100%;
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      margin: 16px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 6px 18px rgba(37,211,102,0.35);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Phone Island for Desktop View -->
+  <div class="phone-island"><div class="camera-lens"></div></div>
+
+  <div class="app-wrapper">
+
+    <!-- 1. DASHBOARD SCREEN -->
+    <div id="screen-dashboard" class="screen active">
+      <div class="app-header">
+        <div class="header-left">
+          <div class="brand-icon">🚗</div>
+          <div>
+            <div class="brand-title">Mobility App</div>
+            <div class="brand-sub">● Live Mobility Hub</div>
+          </div>
+        </div>
+        <div style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; border:1px solid #FDE68A;">
+          ★ GOLD MEMBER
+        </div>
+      </div>
+
+      <!-- AI Route Planner Hero Banner -->
+      <div class="hero-banner">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="ai-pill">✨ AI MULTI-MODAL ROUTE PLANNER</div>
+          <span style="font-size:11px; color:#94A3B8; font-weight:600;">94.2% Route Match</span>
+        </div>
+        <h3 style="margin-top:10px; font-size:16px; font-weight:800;">Interactive Live Route & Fleet Booking</h3>
+        <p style="font-size:12px; color:#94A3B8; margin-top:6px; line-height:1.4;">
+          Set pickup & drop locations on the live map &bull; AI ranks optimal vehicles &bull; Instant WhatsApp confirmation.
+        </p>
+        <button class="hero-btn" onclick="navigateTo('screen-planner')">
+          <span>Start Route Planner & Select Car</span> ➔
+        </button>
+      </div>
+
+      <div class="section-title">SELECT MOBILITY SERVICE</div>
+
+      <!-- Service 1: Self-Drive -->
+      <div class="service-card" onclick="navigateTo('screen-planner')">
+        <div class="card-top">
+          <div class="card-title">Self-Drive Car Rentals</div>
+          <span class="badge badge-green">DRIVE YOURSELF</span>
+        </div>
+        <div class="card-desc">Hourly & Daily Self-Drive with Zero Deposit. 10+ hatchbacks, sedans, SUVs with live road route.</div>
+        <div class="card-action"><span>Plan Route & Book</span> ➔</div>
+      </div>
+
+      <!-- Service 2: Rental Service -->
+      <div class="service-card" onclick="navigateTo('screen-planner')">
+        <div class="card-top">
+          <div class="card-title">Rental Service (Car + Driver)</div>
+          <span class="badge badge-blue">CAR + DRIVER</span>
+        </div>
+        <div class="card-desc">Luxury local, airport & outstation trips with certified commercial driver. 10+ premium vehicles.</div>
+        <div class="card-action" style="color:#2563EB;"><span>Book Rental Car</span> ➔</div>
+      </div>
+
+      <!-- Service 3: Acting Driver -->
+      <div class="service-card" onclick="alert('Acting Driver Services: 100% Verified Drivers with Police Clearance & Commercial Badges. Helpline: 8807861577')">
+        <div class="card-top">
+          <div class="card-title">Acting Driver Services</div>
+          <span class="badge" style="background:#FFFBEB; color:#D97706; border:1px solid #FDE68A;">HIRE A DRIVER</span>
+        </div>
+        <div class="card-desc">Hire background-verified drivers for your own car. 5 mandatory proofs verified.</div>
+        <div class="card-action" style="color:#D97706;"><span>Hire Driver</span> ➔</div>
+      </div>
+
+      <div class="section-title">MY RECENT TRIPS</div>
+      <div style="background:white; margin:0 16px 20px; padding:14px; border-radius:16px; border:1px solid #E2E8F0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-weight:800; font-size:13px; color:#0F172A;">Honda City (Executive Sedan)</span>
+          <span style="color:#10B981; font-weight:800; font-size:12px;">₹700 &bull; PAID</span>
+        </div>
+        <div style="font-size:11px; color:#64748B;">Central Station ➔ Tidel Park, OMR &bull; Yesterday</div>
+      </div>
+    </div>
+
+    <!-- 2. ROUTE PLANNER SCREEN -->
+    <div id="screen-planner" class="screen">
+      <div class="app-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="back-btn" onclick="navigateTo('screen-dashboard')">←</button>
+          <div>
+            <div class="brand-title" style="font-size:15px;">Route Planner</div>
+            <div class="brand-sub">Live Road Distance</div>
+          </div>
+        </div>
+        <div style="font-size:11px; font-weight:800; color:#10B981; background:#ECFDF5; padding:4px 8px; border-radius:6px;">
+          <span id="route-km">18.2</span> KM
+        </div>
+      </div>
+
+      <div style="padding:16px;">
+        <div class="input-box">
+          <span style="color:#10B981;">📍</span>
+          <input type="text" id="pickup-input" value="Anna Nagar West, Chennai" oninput="updateRouteDebounce()" />
+        </div>
+        <div class="input-box">
+          <span style="color:#EF4444;">🏁</span>
+          <input type="text" id="drop-input" value="Chennai Airport T1" oninput="updateRouteDebounce()" />
+        </div>
+
+        <div style="font-size:11px; font-weight:800; color:#64748B; margin:8px 0 4px;">POPULAR DESTINATIONS:</div>
+        <div class="chip-container">
+          <div class="chip" onclick="selectChip('Chennai Central', 13.0850, 80.2780)">Central Station</div>
+          <div class="chip active" onclick="selectChip('Airport T1', 12.9856, 80.1636)">Airport T1</div>
+          <div class="chip" onclick="selectChip('Tidel Park OMR', 12.9219, 80.2275)">Tidel Park OMR</div>
+          <div class="chip" onclick="selectChip('Marina Beach', 13.0499, 80.2824)">Marina Beach</div>
+          <div class="chip" onclick="selectChip('T Nagar Hub', 13.0418, 80.2341)">T Nagar Hub</div>
+        </div>
+
+        <!-- Interactive Map Container -->
+        <div id="map"></div>
+      </div>
+
+      <div class="bottom-bar">
+        <div>
+          <div class="bar-total"><span id="bar-dist">18.2</span> KM</div>
+          <div class="bar-sub">10+ Self-Drive Cars Available</div>
+        </div>
+        <button class="primary-btn" onclick="navigateTo('screen-vehicles')">
+          <span>Select Car</span> ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. AI MULTI-MODAL VEHICLE SELECTION SCREEN -->
+    <div id="screen-vehicles" class="screen">
+      <div class="app-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="back-btn" onclick="navigateTo('screen-planner')">←</button>
+          <div>
+            <div class="brand-title" style="font-size:15px;">Select Vehicle</div>
+            <div class="brand-sub">AI Match Algorithm (Sec VII.A)</div>
+          </div>
+        </div>
+        <span style="font-size:11px; font-weight:800; color:#059669; background:#ECFDF5; padding:4px 8px; border-radius:6px;">
+          Zero Deposit
+        </span>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="filterFleet('all', this)">All (10+)</button>
+        <button class="filter-btn" onclick="filterFleet('Hatchback', this)">Hatchback</button>
+        <button class="filter-btn" onclick="filterFleet('Compact SUV', this)">Compact SUV</button>
+        <button class="filter-btn" onclick="filterFleet('Executive Sedan', this)">Executive Sedan</button>
+        <button class="filter-btn" onclick="filterFleet('EV', this)">EV / Electric</button>
+      </div>
+
+      <div id="fleet-container" style="padding-bottom:16px;"></div>
+
+      <div class="bottom-bar">
+        <div>
+          <div class="bar-total">₹<span id="selected-fare">750</span></div>
+          <div class="bar-sub" id="selected-summary">Tata Nexon &bull; 18.2 KM</div>
+        </div>
+        <button class="primary-btn" onclick="navigateTo('screen-payment')">
+          <span>Book Self-Drive</span> ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. BOOKING SUMMARY & PAYMENT SCREEN -->
+    <div id="screen-payment" class="screen">
+      <div class="app-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="back-btn" onclick="navigateTo('screen-vehicles')">←</button>
+          <div>
+            <div class="brand-title" style="font-size:15px;">Booking & Checkout</div>
+            <div class="brand-sub">Secure UPI / Card</div>
+          </div>
+        </div>
+        <span style="color:#10B981; font-weight:800; font-size:13px;">🔒 256-bit SSL</span>
+      </div>
+
+      <!-- Booking Summary Card -->
+      <div class="summary-card">
+        <div style="font-size:11px; font-weight:800; color:#64748B; letter-spacing:0.8px; margin-bottom:10px;">
+          BOOKING SUMMARY
+        </div>
+        <div class="summary-row">
+          <span>Service Mode</span>
+          <span class="summary-val">Self-Drive Car Rental</span>
+        </div>
+        <div class="summary-row">
+          <span>Vehicle / Driver</span>
+          <span class="summary-val" id="pay-vehicle">Tata Nexon (Compact SUV)</span>
+        </div>
+        <div class="summary-row">
+          <span>Pickup Location</span>
+          <span class="summary-val" id="pay-pickup">Anna Nagar West, Chennai</span>
+        </div>
+        <div class="summary-row">
+          <span>Drop Location</span>
+          <span class="summary-val" id="pay-drop">Chennai Airport T1</span>
+        </div>
+        <div class="summary-row">
+          <span>Road Distance</span>
+          <span class="summary-val"><span id="pay-km">18.2</span> KM</span>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+          <span style="font-weight:800; font-size:14px; color:#0F172A;">TOTAL PAYABLE</span>
+          <span style="font-size:22px; font-weight:900; color:#10B981;">₹<span id="pay-total">750</span></span>
+        </div>
+      </div>
+
+      <div class="section-title">SELECT PAYMENT METHOD</div>
+      <div class="method-tab">
+        <button class="m-btn active" id="m-upi" onclick="setPayMethod('upi')">Pay via UPI</button>
+        <button class="m-btn" id="m-card" onclick="setPayMethod('card')">Debit / Credit Card</button>
+      </div>
+
+      <!-- UPI Section -->
+      <div id="upi-section">
+        <div class="upi-grid">
+          <div class="upi-box active" onclick="selectUpiApp(this, 'Google Pay')">
+            <div style="font-weight:900; color:#4285F4; font-size:13px;">GPay</div>
+            <span>GOOGLE PAY</span>
+          </div>
+          <div class="upi-box" onclick="selectUpiApp(this, 'PhonePe')">
+            <div style="font-weight:900; color:#5F259F; font-size:13px;">पे</div>
+            <span>PHONEPE</span>
+          </div>
+          <div class="upi-box" onclick="selectUpiApp(this, 'Paytm')">
+            <div style="font-weight:900; color:#00BAF2; font-size:13px;">paytm</div>
+            <span>PAYTM</span>
+          </div>
+          <div class="upi-box" onclick="selectUpiApp(this, 'BHIM')">
+            <div style="font-weight:900; color:#FF9933; font-size:13px;">BHIM</div>
+            <span>UPI</span>
+          </div>
+        </div>
+        <div style="margin:0 16px;">
+          <input type="text" id="upi-id" value="rajavel@okhdfcbank" style="width:100%; padding:12px; border-radius:12px; border:1px solid #CBD5E1; font-size:13px; outline:none;" placeholder="yourname@upi" />
+        </div>
+      </div>
+
+      <!-- Card Section -->
+      <div id="card-section" style="display:none; margin:0 16px;">
+        <input type="text" value="Rajavel Kumar" style="width:100%; padding:10px; border-radius:10px; border:1px solid #CBD5E1; font-size:13px; margin-bottom:8px;" placeholder="Cardholder Name" />
+        <input type="text" value="4532 8921 7654 3210" style="width:100%; padding:10px; border-radius:10px; border:1px solid #CBD5E1; font-size:13px; margin-bottom:8px;" placeholder="Card Number" />
+        <div style="display:flex; gap:8px;">
+          <input type="text" value="08/28" style="flex:1; padding:10px; border-radius:10px; border:1px solid #CBD5E1; font-size:13px;" placeholder="MM/YY" />
+          <input type="password" value="789" style="flex:1; padding:10px; border-radius:10px; border:1px solid #CBD5E1; font-size:13px;" placeholder="CVV" />
+        </div>
+      </div>
+
+      <div style="padding:20px 16px;">
+        <button class="primary-btn" style="width:100%; padding:15px; justify-content:center; font-size:16px;" onclick="processPayment()">
+          Proceed to Pay
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. SUCCESS RECEIPT & WHATSAPP REDIRECT SCREEN -->
+    <div id="screen-success" class="screen">
+      <div class="success-container">
+        <div class="check-circle">✓</div>
+        <h2 style="font-size:22px; font-weight:900; color:#0F172A; margin-bottom:4px;">Booking Confirmed!</h2>
+        <div style="font-size:12px; color:#64748B; font-weight:600;">Transaction ID: <span id="txn-id" style="color:#0F172A;">TXN892K10</span></div>
+
+        <div class="summary-card" style="width:100%; margin:20px 0 10px; text-align:left;">
+          <div class="summary-row">
+            <span>Vehicle:</span>
+            <span class="summary-val" id="receipt-veh">Tata Nexon</span>
+          </div>
+          <div class="summary-row">
+            <span>Amount Paid:</span>
+            <span class="summary-val" style="color:#10B981; font-size:16px;">₹<span id="receipt-fare">750</span></span>
+          </div>
+          <div class="summary-row">
+            <span>Pickup:</span>
+            <span class="summary-val" id="receipt-p">Anna Nagar West</span>
+          </div>
+          <div class="summary-row">
+            <span>Drop:</span>
+            <span class="summary-val" id="receipt-d">Airport T1</span>
+          </div>
+          <div class="summary-row">
+            <span>Status:</span>
+            <span class="summary-val" style="color:#059669;">CONFIRMED &amp; PAID</span>
+          </div>
+        </div>
+
+        <button class="wa-btn" onclick="sendWhatsAppReceipt()">
+          <span style="font-size:18px;">💬</span>
+          <span>Send Receipt to WhatsApp (8807861577)</span>
+        </button>
+
+        <button style="background:#F1F5F9; border:none; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:700; color:#475569; width:100%; cursor:pointer;" onclick="navigateTo('screen-dashboard')">
+          Return to Dashboard
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="desktop-caption">
+    <span>📱 Responsive Mobile Preview (390 × 844) &bull; Live Platform</span>
+  </div>
+
+  <script>
+    // Fleet data (10+ vehicles with full specifications)
+    const FLEET = [
+      { name: 'Tata Nexon', type: 'Compact SUV', base: 450, rate: 16.5, seats: 5, fuel: 'Petrol/EV', trans: 'Manual/Auto', bag: '3 Bags', match: '96% Match', tag: '5★ SAFETY' },
+      { name: 'Maruti Swift', type: 'Hatchback', base: 350, rate: 12.0, seats: 5, fuel: 'Petrol', trans: 'Manual', bag: '2 Bags', match: '94% Match', tag: 'BEST VALUE' },
+      { name: 'Hyundai i20', type: 'Hatchback', base: 400, rate: 13.5, seats: 5, fuel: 'Petrol', trans: 'Auto / IVT', bag: '2 Bags', match: '91% Match', tag: 'PREMIUM TECH' },
+      { name: 'Honda City', type: 'Executive Sedan', base: 550, rate: 15.0, seats: 5, fuel: 'Petrol', trans: 'Manual/CVT', bag: '3 Bags', match: '92% Match', tag: 'EXECUTIVE' },
+      { name: 'Hyundai Verna', type: 'Executive Sedan', base: 600, rate: 16.0, seats: 5, fuel: 'Turbo Petrol', trans: 'DCT', bag: '3 Bags', match: '89% Match', tag: 'TURBO POWER' },
+      { name: 'Mahindra Thar', type: 'Compact SUV', base: 750, rate: 19.0, seats: 4, fuel: 'Diesel 4x4', trans: 'Manual/Auto', bag: '2 Bags', match: '88% Match', tag: '4x4 OFFROAD' },
+      { name: 'Toyota Innova Crysta', type: 'Compact SUV', base: 850, rate: 21.0, seats: 7, fuel: 'Diesel', trans: 'Auto', bag: '5 Bags', match: '87% Match', tag: '7-SEATER LUX' },
+      { name: 'Tata Curvv EV', type: 'EV', base: 500, rate: 14.0, seats: 5, fuel: 'Electric (400KM)', trans: 'Automatic', bag: '3 Bags', match: '95% Match', tag: 'ZERO EMISSION' },
+    ];
+
+    let currentKm = 18.2;
+    let selectedVehicleIndex = 0;
+    let selectedUpi = 'Google Pay';
+    let mapInstance = null;
+    let routePolyline = null;
+
+    // Navigation function
+    function navigateTo(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.add('active');
+        if (screenId === 'screen-planner') {
+          setTimeout(initLeafletMap, 150);
+        }
+        if (screenId === 'screen-vehicles') {
+          renderFleet();
+        }
+      }
+    }
+
+    // Leaflet Interactive Map
+    function initLeafletMap() {
+      if (!mapInstance) {
+        mapInstance = L.map('map', { zoomControl: false }).setView([13.0450, 80.2200], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(mapInstance);
+      }
+      setTimeout(() => {
+        mapInstance.invalidateSize();
+        drawRoute([13.0850, 80.2101], [12.9856, 80.1636]);
+      }, 200);
+    }
+
+    function drawRoute(p1, p2) {
+      if (routePolyline) mapInstance.removeLayer(routePolyline);
+      const points = [
+        p1,
+        [13.0500, 80.2000],
+        [13.0100, 80.1800],
+        p2
+      ];
+      routePolyline = L.polyline(points, { color: '#10B981', weight: 5, opacity: 0.85 }).addTo(mapInstance);
+      mapInstance.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+    }
+
+    function selectChip(name, lat, lng) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('drop-input').value = name;
+      currentKm = Math.round((14.0 + Math.random() * 8) * 10) / 10;
+      updateRouteDisplay();
+      drawRoute([13.0850, 80.2101], [lat, lng]);
+    }
+
+    function updateRouteDebounce() {
+      currentKm = Math.round((15.0 + Math.random() * 6) * 10) / 10;
+      updateRouteDisplay();
+    }
+
+    function updateRouteDisplay() {
+      document.getElementById('route-km').innerText = currentKm.toFixed(1);
+      document.getElementById('bar-dist').innerText = currentKm.toFixed(1);
+      document.getElementById('pay-km').innerText = currentKm.toFixed(1);
+      document.getElementById('pay-pickup').innerText = document.getElementById('pickup-input').value;
+      document.getElementById('pay-drop').innerText = document.getElementById('drop-input').value;
+    }
+
+    // Render Fleet Cards
+    function renderFleet(filter = 'all') {
+      const container = document.getElementById('fleet-container');
+      container.innerHTML = '';
+      FLEET.forEach((v, idx) => {
+        if (filter !== 'all' && v.type !== filter) return;
+        const totalFare = Math.round(v.base + (v.rate * currentKm));
+        const isSel = idx === selectedVehicleIndex;
+        const card = document.createElement('div');
+        card.className = 'vehicle-card' + (isSel ? ' selected' : '');
+        card.onclick = () => selectVehicle(idx);
+        card.innerHTML = `
+          <div class="v-header">
+            <div>
+              <div class="v-name">${v.name}</div>
+              <div style="font-size:11px; color:#64748B; font-weight:600;">${v.type} &bull; ${v.match}</div>
+            </div>
+            <div class="v-fare">₹${totalFare}</div>
+          </div>
+          <div class="v-specs">
+            <span class="v-spec-chip">👥 ${v.seats} Seats</span>
+            <span class="v-spec-chip">⚙️ ${v.trans}</span>
+            <span class="v-spec-chip">⛽ ${v.fuel}</span>
+            <span class="v-spec-chip">🧳 ${v.bag}</span>
+            <span class="v-spec-chip" style="background:#ECFDF5; color:#059669; font-weight:800;">${v.tag}</span>
+          </div>
+          <div style="font-size:11px; color:#10B981; font-weight:700;">
+            ${isSel ? '✓ SELECTED FOR BOOKING' : 'Tap to select'}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      updateSelectedBar();
+    }
+
+    function selectVehicle(idx) {
+      selectedVehicleIndex = idx;
+      renderFleet();
+    }
+
+    function updateSelectedBar() {
+      const v = FLEET[selectedVehicleIndex];
+      const fare = Math.round(v.base + (v.rate * currentKm));
+      document.getElementById('selected-fare').innerText = fare;
+      document.getElementById('selected-summary').innerText = `${v.name} • ${currentKm.toFixed(1)} KM`;
+      document.getElementById('pay-vehicle').innerText = `${v.name} (${v.type})`;
+      document.getElementById('pay-total').innerText = fare;
+    }
+
+    function filterFleet(type, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFleet(type);
+    }
+
+    function setPayMethod(m) {
+      document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('m-' + m).classList.add('active');
+      document.getElementById('upi-section').style.display = m === 'upi' ? 'block' : 'none';
+      document.getElementById('card-section').style.display = m === 'card' ? 'block' : 'none';
+    }
+
+    function selectUpiApp(el, name) {
+      document.querySelectorAll('.upi-box').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      selectedUpi = name;
+    }
+
+    function processPayment() {
+      const v = FLEET[selectedVehicleIndex];
+      const fare = Math.round(v.base + (v.rate * currentKm));
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let txn = 'TXN';
+      for (let i = 0; i < 8; i++) txn += chars.charAt(Math.floor(Math.random() * chars.length));
+
+      document.getElementById('txn-id').innerText = txn;
+      document.getElementById('receipt-veh').innerText = v.name;
+      document.getElementById('receipt-fare').innerText = fare;
+      document.getElementById('receipt-p').innerText = document.getElementById('pickup-input').value;
+      document.getElementById('receipt-d').innerText = document.getElementById('drop-input').value;
+
+      navigateTo('screen-success');
+
+      // Auto redirect after 2s
+      setTimeout(sendWhatsAppReceipt, 2000);
+    }
+
+    function sendWhatsAppReceipt() {
+      const v = FLEET[selectedVehicleIndex];
+      const fare = Math.round(v.base + (v.rate * currentKm));
+      const txn = document.getElementById('txn-id').innerText;
+      const pickup = document.getElementById('pickup-input').value;
+      const drop = document.getElementById('drop-input').value;
+
+      const msg = `Mobility App — Booking Confirmed ✅\n\n` +
+        `Customer: Rajavel Kumar\n` +
+        `Service: Self-Drive Car Rental\n` +
+        `Vehicle: ${v.name} (${v.type})\n\n` +
+        `📍 Pickup: ${pickup}\n` +
+        `🏁 Drop-off: ${drop}\n` +
+        `📏 Distance: ${currentKm.toFixed(1)} KM\n\n` +
+        `💳 Payment: UPI (${selectedUpi})\n` +
+        `💰 Amount Paid: ₹${fare}\n` +
+        `🔖 Transaction ID: ${txn}\n` +
+        `✅ Status: PAID & CONFIRMED\n\n` +
+        `Powered by Mobility App 🚗`;
+
+      const waUrl = `https://wa.me/918807861577?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    // Initialize
+    updateRouteDisplay();
+    renderFleet();
+  </script>
+</body>
+</html>
