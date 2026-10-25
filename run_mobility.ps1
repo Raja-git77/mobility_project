@@ -91,13 +91,17 @@ if (-not $tunnelProc -or [string]::IsNullOrWhiteSpace($publicUrl)) {
     Write-Host "[+] Public Tunnel already active: $publicUrl" -ForegroundColor Green
 }
 
-# 4. Register Chrome Omnibox Keywords
-try {
-    python add_chrome_keyword.py | Out-Null
-} catch {}
+# 4. Ensure Background Chrome Search Watcher is Active
+$watcherProc = Get-CimInstance Win32_Process -Filter "name like 'python%'" | Where-Object { $_.CommandLine -like "*chrome_watcher.py*" }
+if (-not $watcherProc) {
+    Write-Host "[*] Starting Chrome Mobility Watcher (chrome_watcher.py) in background..." -ForegroundColor Cyan
+    Start-Process -FilePath "pythonw.exe" -ArgumentList "`"$projectDir\chrome_watcher.py`"" -WorkingDirectory $projectDir -WindowStyle Hidden
+} else {
+    Write-Host "[+] Chrome Mobility Watcher is already running in background." -ForegroundColor Green
+}
 
-# 5. Launch Google Chrome with Mobility Auto-Redirect Extension
-Write-Host "[*] Launching Google Chrome with Auto-Redirect Extension..." -ForegroundColor Cyan
+# 5. Launch Google Chrome
+Write-Host "[*] Launching Google Chrome..." -ForegroundColor Cyan
 $extPath = "$projectDir\chrome_redirect_ext"
 $chromeArgs = "--load-extension=`"$extPath`" `"$localUrl`""
 if (Test-Path $chromePath) {
