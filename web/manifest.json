@@ -1,35 +1,59 @@
 {
-    "name": "mobility_app",
-    "short_name": "mobility_app",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
-    "prefer_related_applications": false,
-    "icons": [
-        {
-            "src": "icons/Icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-maskable-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "icons/Icon-maskable-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable"
-        }
-    ]
+  "name": "Mobility App — AI-Driven Integrated Mobility Platform",
+  "short_name": "Mobility App",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0F1E",
+  "theme_color": "#6366F1",
+  "description": "Smart integrated mobility platform featuring self-drive car rentals, on-demand acting drivers, dynamic AI surge pricing, and partner fleet management.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "categories": ["transportation", "travel", "utilities"],
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Self-Drive Cars",
+      "short_name": "Self-Drive",
+      "description": "Browse and book self-drive rental cars",
+      "url": "./#self-drive"
+    },
+    {
+      "name": "Hire Acting Driver",
+      "short_name": "Acting Driver",
+      "description": "Book a verified professional chauffeur",
+      "url": "./#acting-driver"
+    },
+    {
+      "name": "Partner Dashboard",
+      "short_name": "Partner Fleet",
+      "description": "Manage fleet vehicles and track earnings",
+      "url": "./#partner"
+    }
+  ]
 }

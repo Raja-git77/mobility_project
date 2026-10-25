@@ -489,13 +489,45 @@ function go(t){
 }
 
 // ── api & real-time connection ──────────────────────────────────────────────
+let _TUNNEL_API = '';
+const isGitHubPages = window.location.hostname.includes('github.io');
 const API_ORIGIN = window.location.origin;
 let _rtCallCount = 0;
 let _rtMinimized = false;
 
+async function checkApiConfig() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('api')) {
+    _TUNNEL_API = p.get('api').replace(/\/$/, '');
+    localStorage.setItem('mobility_api_url', _TUNNEL_API);
+    return;
+  }
+  const saved = localStorage.getItem('mobility_api_url');
+  if (saved) _TUNNEL_API = saved;
+  if (isGitHubPages) {
+    try {
+      const res = await fetch('api_config.json?t=' + Date.now());
+      if (res.ok) {
+        const d = await res.json();
+        if (d.api_url) {
+          _TUNNEL_API = d.api_url.replace(/\/$/, '');
+          localStorage.setItem('mobility_api_url', _TUNNEL_API);
+        }
+      }
+    } catch(e) {}
+  }
+}
+checkApiConfig();
+
 function resolveApiUrl(u) {
   if (!u) return '/';
+  if (isGitHubPages && _TUNNEL_API && u.startsWith('/api')) {
+    return _TUNNEL_API + u;
+  }
   if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1') || u.startsWith('https://localhost') || u.startsWith('https://127.0.0.1')) {
+    if (isGitHubPages && _TUNNEL_API) {
+      return u.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, _TUNNEL_API);
+    }
     return u.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, API_ORIGIN);
   }
   return u;

@@ -156,7 +156,7 @@ class AppState {
   bool connectedViaWhatsApp = false;
   String whatsappPhone = '8807861577';
   static const String defaultLanUrl = 'http://10.170.32.216:8080';
-  static const String defaultTunnelUrl = 'https://hot-falcons-post.loca.lt';
+  static const String defaultTunnelUrl = 'https://mysimon-composition-wow-bool.trycloudflare.com';
 
   static String getInitialMobileUrl() {
     try {

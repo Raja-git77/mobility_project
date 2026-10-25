@@ -4,34 +4,34 @@
 # ==============================================================================
 
 $projectDir = "C:\Users\RAJAVEL\Desktop\mobility_project"
-$url = "http://127.0.0.1:8000"
+$localUrl = "http://127.0.0.1:8000"
+$liveGhUrl = "https://raja-git77.github.io/mobility_project/"
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 
 Set-Location -Path $projectDir
 
 Write-Host "=====================================================" -ForegroundColor Cyan
-Write-Host "  MOBILITY PLATFORM -- REAL-TIME ENVIRONMENT TRIGGER  " -ForegroundColor Yellow
+Write-Host "  MOBILITY PLATFORM -- REAL-TIME AUTONOMOUS LAUNCHER " -ForegroundColor Yellow
 Write-Host "=====================================================" -ForegroundColor Cyan
 Write-Host "[*] Project Directory: $projectDir" -ForegroundColor Gray
 
-# 1. Check if server is already responding
+# 1. Check if backend server is already responding
 $isRunning = $false
 try {
-    $resp = Invoke-RestMethod -Uri "$url/api/health" -Method Get -TimeoutSec 2 -ErrorAction Stop
+    $resp = Invoke-RestMethod -Uri "$localUrl/api/health" -Method Get -TimeoutSec 2 -ErrorAction Stop
     if ($resp.status -eq "online") {
         $isRunning = $true
-        Write-Host "[+] Server already running on $url (DB: $($resp.db))" -ForegroundColor Green
+        Write-Host "[+] Local Server already running on $localUrl (DB: $($resp.db))" -ForegroundColor Green
     }
 } catch {
     $isRunning = $false
 }
 
-# 2. Start server if not running
+# 2. Start backend server if not running
 if (-not $isRunning) {
-    # Check if a defunct process is occupying port 8000 and clear it
     $portConn = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
     if ($portConn) {
-        Write-Host "[*] Freeing up busy port 8000..." -ForegroundColor Yellow
+        Write-Host "[*] Freeing port 8000..." -ForegroundColor Yellow
         $portConn | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
         Start-Sleep -Milliseconds 500
     }
@@ -40,13 +40,12 @@ if (-not $isRunning) {
     $env:FLASK_DEBUG = "1"
     Start-Process -FilePath "python" -ArgumentList "app.py" -WorkingDirectory $projectDir -WindowStyle Normal
 
-    # Wait for server to become healthy
-    Write-Host "[*] Waiting for server health check..." -ForegroundColor Gray
+    # Wait for server health check
     $healthy = $false
     for ($i = 0; $i -lt 15; $i++) {
         Start-Sleep -Milliseconds 600
         try {
-            $resp = Invoke-RestMethod -Uri "$url/api/health" -Method Get -TimeoutSec 1 -ErrorAction Stop
+            $resp = Invoke-RestMethod -Uri "$localUrl/api/health" -Method Get -TimeoutSec 1 -ErrorAction Stop
             if ($resp.status -eq "online") {
                 $healthy = $true
                 break
@@ -55,22 +54,67 @@ if (-not $isRunning) {
     }
 
     if ($healthy) {
-        Write-Host "[+] Server is ONLINE & HEALTHY at $url!" -ForegroundColor Green
+        Write-Host "[+] Local Server is ONLINE at $localUrl!" -ForegroundColor Green
     } else {
-        Write-Host "[!] Server started, continuing to launch browser..." -ForegroundColor Yellow
+        Write-Host "[!] Local Server starting up in background..." -ForegroundColor Yellow
     }
 }
 
-# 3. Launch Google Chrome
-Write-Host "[*] Launching Google Chrome at $url..." -ForegroundColor Cyan
-if (Test-Path $chromePath) {
-    Start-Process -FilePath $chromePath -ArgumentList "$url"
+# 3. Check and start Cloudflare Tunnel (Public HTTPS for remote strangers)
+$tunnelProc = Get-Process cloudflared -ErrorAction SilentlyContinue
+$publicUrl = ""
+if (Test-Path "$projectDir\tunnel_url.txt") {
+    $publicUrl = (Get-Content "$projectDir\tunnel_url.txt" -Raw).Trim()
+}
+
+if (-not $tunnelProc -or [string]::IsNullOrWhiteSpace($publicUrl)) {
+    Write-Host "[*] Starting Cloudflare HTTPS Quick Tunnel..." -ForegroundColor Cyan
+    Remove-Item -Path "$projectDir\cf_tunnel.log" -Force -ErrorAction SilentlyContinue
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c cloudflared.exe tunnel --protocol http2 --url http://127.0.0.1:8000 2> cf_tunnel.log" -WorkingDirectory $projectDir -WindowStyle Minimized
+
+    for ($i = 0; $i -lt 15; $i++) {
+        Start-Sleep -Milliseconds 800
+        if (Test-Path "$projectDir\cf_tunnel.log") {
+            $match = Select-String -Path "$projectDir\cf_tunnel.log" -Pattern "https://[a-zA-Z0-9-]+\.trycloudflare\.com"
+            if ($match) {
+                $publicUrl = $match.Matches[0].Value
+                Set-Content -Path "$projectDir\tunnel_url.txt" -Value $publicUrl
+                $json = @{ api_url = $publicUrl; updated_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"); status = "online" } | ConvertTo-Json
+                Set-Content -Path "$projectDir\api_config.json" -Value $json
+                Set-Content -Path "$projectDir\web\api_config.json" -Value $json
+                Set-Content -Path "$projectDir\build\web\api_config.json" -Value $json
+                Write-Host "[+] Public Tunnel Active: $publicUrl" -ForegroundColor Green
+                break
+            }
+        }
+    }
 } else {
-    Start-Process "chrome" -ArgumentList "$url" -ErrorAction SilentlyContinue
+    Write-Host "[+] Public Tunnel already active: $publicUrl" -ForegroundColor Green
+}
+
+# 4. Register Chrome Omnibox Keywords
+try {
+    python add_chrome_keyword.py | Out-Null
+} catch {}
+
+# 5. Launch Google Chrome
+Write-Host "[*] Launching Google Chrome..." -ForegroundColor Cyan
+if (Test-Path $chromePath) {
+    Start-Process -FilePath $chromePath -ArgumentList "$localUrl"
+} else {
+    Start-Process "chrome" -ArgumentList "$localUrl" -ErrorAction SilentlyContinue
 }
 
 Write-Host "=====================================================" -ForegroundColor Cyan
-Write-Host "  Mobility Platform is LIVE in Google Chrome!        " -ForegroundColor Green
-Write-Host "  URL: $url                                          " -ForegroundColor White
-Write-Host "  Flutter App: $url/flutter                          " -ForegroundColor White
+Write-Host "  Mobility Platform is LIVE & ACCESSIBLE EVERYWHERE! " -ForegroundColor Green
 Write-Host "=====================================================" -ForegroundColor Cyan
+Write-Host "  1. Local Real-Time URL:   $localUrl" -ForegroundColor White
+Write-Host "  2. Public Live Tunnel:    $publicUrl" -ForegroundColor White
+Write-Host "  3. 24/7 GitHub Pages:     $liveGhUrl" -ForegroundColor White
+Write-Host "  4. Chrome Omnibox:        Type 'mobility app' in Chrome" -ForegroundColor Yellow
+Write-Host "=====================================================" -ForegroundColor Cyan
+
+# 6. Display Terminal QR Code for Instant Mobile Scanning
+try {
+    python -c "import sys, qrcode; sys.stdout.reconfigure(encoding='utf-8'); qr = qrcode.QRCode(border=1); qr.add_data('$liveGhUrl'); qr.print_ascii(invert=True)"
+} catch {}

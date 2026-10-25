@@ -27,37 +27,33 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
 
 # ── CORS setup ─────────────────────────────────────────────────────────────
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
-if allowed_origins_env != "*":
-    origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
-    supports_credentials = True
-else:
-    origins = "*"
-    supports_credentials = False
-
 if CORS:
-    CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=supports_credentials)
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 @app.after_request
 def apply_cors_headers(response):
     origin = request.headers.get("Origin")
-    if origin and allowed_origins_env != "*":
-        if origin in origins:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
     else:
-        response.headers.setdefault("Access-Control-Allow-Origin", "*")
-    response.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-    response.headers.setdefault("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
     return response
 
 @app.route("/", defaults={"path": ""}, methods=["OPTIONS"])
 @app.route("/<path:path>", methods=["OPTIONS"])
 def preflight_options(path=""):
     resp = make_response()
-    resp.headers["Access-Control-Allow-Origin"] = "*"
+    origin = request.headers.get("Origin")
+    if origin:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+    else:
+        resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
     return resp, 204
 
 # ── AI helpers ─────────────────────────────────────────────────────────────

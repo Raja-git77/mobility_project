@@ -1,0 +1,6 @@
+# Robots.txt for Mobility App | AI-Driven Integrated Mobility Platform
+User-agent: *
+Allow: /
+
+# Sitemap Index
+Sitemap: https://raja-git77.github.io/mobility_project/sitemap.xml
